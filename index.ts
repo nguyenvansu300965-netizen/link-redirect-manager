@@ -2308,6 +2308,16 @@ function getAdminHTML(currentUsername: string): string {
       }
 
       try {
+        const parsedUrl = new URL(targetUrl);
+        if (parsedUrl.protocol !== 'https:' || parsedUrl.hostname !== 'wa.me') {
+          throw new Error('目标 URL 必须是以 https://wa.me 开头的官方链接');
+        }
+      } catch (error) {
+        setMessage('link-message', error instanceof Error ? error.message : '目标 URL 必须是以 https://wa.me 开头的官方链接', 'error');
+        return;
+      }
+
+      try {
         await api('/api/links', {
           method: 'POST',
           body: JSON.stringify({
@@ -2665,6 +2675,15 @@ async function handleCreateLink(req: Request, sql: SqlClient, ownerUsername: str
 
   if (!domainId || !orderNum || !targetUrl) {
     return jsonResponse({ error: "domain_id, order_num and target_url are required" }, 400);
+  }
+
+  try {
+    const parsedUrl = new URL(targetUrl);
+    if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "wa.me") {
+      return jsonResponse({ error: "target_url must be an official https://wa.me link" }, 400);
+    }
+  } catch {
+    return jsonResponse({ error: "target_url must be an official https://wa.me link" }, 400);
   }
 
   const domain = await resolveOwnedDomain(sql, domainId, ownerUsername);
